@@ -18,10 +18,12 @@ import {
   ZoomOut,
   RefreshCw,
   FileCode2,
-  AlertCircle
+  AlertCircle,
+  LayoutTemplate
 } from 'lucide-react';
 
-const DEFAULT_CODE = `sequenceDiagram
+const TEMPLATES: Record<string, string> = {
+  'Sequence': `sequenceDiagram
     actor User
     participant Client as Web Browser
     participant API as API Gateway
@@ -42,19 +44,78 @@ const DEFAULT_CODE = `sequenceDiagram
         Auth-->>API: JWT Token
         API-->>Client: 200 OK + Token
         Client-->>User: Redirect to Dashboard
-    end
-`;
+    end`,
+  'Flowchart': `graph TD
+    A[Start] --> B{Is it raining?}
+    B -- Yes --> C[Take umbrella]
+    B -- No --> D[Enjoy the sun]
+    C --> E[Go outside]
+    D --> E`,
+  'Gantt': `gantt
+    title Project Plan
+    dateFormat  YYYY-MM-DD
+    section Planning
+    Requirements :a1, 2023-01-01, 7d
+    Design       :after a1, 10d
+    section Development
+    Frontend     :2023-01-18, 14d
+    Backend      :2023-01-18, 14d
+    section Testing
+    QA           :2023-02-01, 7d`,
+  'Class': `classDiagram
+    Animal <|-- Duck
+    Animal <|-- Fish
+    Animal <|-- Zebra
+    Animal : +int age
+    Animal : +String gender
+    Animal: +isMammal()
+    Animal: +mate()
+    class Duck{
+      +String beakColor
+      +swim()
+      +quack()
+    }
+    class Fish{
+      -int sizeInFeet
+      -canEat()
+    }
+    class Zebra{
+      +bool is_wild
+      +run()
+    }`,
+  'State': `stateDiagram-v2
+    [*] --> Idle
+    Idle --> Processing : Start
+    Processing --> Success : Complete
+    Processing --> Error : Fail
+    Error --> Idle : Retry
+    Success --> [*]`,
+  'Pie': `pie title Pets adopted by volunteers
+    "Dogs" : 386
+    "Cats" : 85
+    "Rats" : 15
+    "Birds" : 42`
+};
+
+const DEFAULT_CODE = TEMPLATES['Sequence'];
 
 const THEMES = ['default', 'dark', 'forest', 'neutral', 'base'];
 
 export default function App() {
   const [code, setCode] = useState(DEFAULT_CODE);
+  const [debouncedCode, setDebouncedCode] = useState(DEFAULT_CODE);
   const [theme, setTheme] = useState('default');
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [svgContent, setSvgContent] = useState('');
   const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
   const previewRef = useRef<HTMLDivElement>(null);
+
+  // Debounce code changes to prevent excessive rendering
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedCode(code), 300);
+    return () => clearTimeout(timer);
+  }, [code]);
 
   useEffect(() => {
     mermaid.initialize({
@@ -64,12 +125,12 @@ export default function App() {
       fontFamily: 'Inter, sans-serif',
     });
     renderDiagram();
-  }, [code, theme]);
+  }, [debouncedCode, theme]);
 
   const renderDiagram = async () => {
     try {
       const id = `mermaid-preview-${Date.now()}`;
-      const { svg } = await mermaid.render(id, code);
+      const { svg } = await mermaid.render(id, debouncedCode);
       setSvgContent(svg);
       setError('');
     } catch (err: any) {
@@ -206,7 +267,7 @@ export default function App() {
               padding: { top: 16, bottom: 16 },
               fontFamily: 'JetBrains Mono, monospace',
             }}
-            theme="vs-light"
+            theme={theme === 'dark' ? 'vs-dark' : 'vs-light'}
           />
         </div>
       </div>
@@ -229,6 +290,24 @@ export default function App() {
               >
                 {THEMES.map(t => (
                   <option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex items-center gap-2 bg-gray-100 rounded-lg p-1 border border-gray-200 hover:border-gray-300 transition-colors">
+              <LayoutTemplate className="w-4 h-4 text-gray-500 ml-2" />
+              <select 
+                onChange={(e) => {
+                  if (e.target.value) {
+                    setCode(TEMPLATES[e.target.value]);
+                  }
+                }}
+                className="bg-transparent border-none text-sm font-medium text-gray-700 py-1 pr-8 focus:ring-0 cursor-pointer outline-none"
+                defaultValue=""
+              >
+                <option value="" disabled>Templates...</option>
+                {Object.keys(TEMPLATES).map(t => (
+                  <option key={t} value={t}>{t}</option>
                 ))}
               </select>
             </div>
