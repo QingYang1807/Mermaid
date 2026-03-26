@@ -1,0 +1,8 @@
+@import "tailwindcss";
+
+@layer utilities {
+  .mermaid-svg-container svg {
+    max-width: none !important;
+    height: auto !important;
+  }
+}

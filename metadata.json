@@ -1,0 +1,5 @@
+{
+  "name": "Mermaid Studio",
+  "description": "A beautiful real-time Mermaid diagram editor and renderer with multiple themes and export options.",
+  "requestFramePermissions": []
+}
