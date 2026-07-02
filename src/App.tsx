@@ -109,6 +109,7 @@ export default function App() {
   const [svgContent, setSvgContent] = useState('');
   const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
+  const [activeMobilePane, setActiveMobilePane] = useState<'editor' | 'preview'>('editor');
   const previewRef = useRef<HTMLDivElement>(null);
 
   // Debounce code changes to prevent excessive rendering
@@ -238,19 +239,32 @@ export default function App() {
   }, [code, theme]);
 
   return (
-    <div className="flex h-screen w-full bg-gray-50 text-gray-900 font-sans overflow-hidden">
+    <div className="flex h-[100dvh] w-full flex-col bg-gray-50 text-gray-900 font-sans overflow-hidden md:flex-row">
       {/* Left Panel: Editor */}
       <div 
-        className={`flex flex-col border-r border-gray-200 transition-all duration-300 ease-in-out ${
-          isFullscreen ? 'w-0 opacity-0 overflow-hidden' : 'w-1/2 opacity-100'
+        className={`flex-col border-b border-gray-200 transition-all duration-300 ease-in-out md:border-b-0 md:border-r ${
+          isFullscreen
+            ? 'hidden w-0 opacity-0 overflow-hidden md:flex'
+            : activeMobilePane === 'editor'
+              ? 'flex h-full w-full opacity-100 md:w-1/2'
+              : 'hidden opacity-0 md:flex md:w-1/2 md:opacity-100'
         }`}
       >
-        <div className="flex items-center justify-between px-4 py-3 bg-white border-b border-gray-200 shrink-0">
+        <div className="flex flex-wrap items-center justify-between gap-3 px-3 py-3 bg-white border-b border-gray-200 shrink-0 sm:px-4">
           <h1 className="text-lg font-semibold flex items-center gap-2">
             <FileCode2 className="w-5 h-5 text-blue-600" />
             Mermaid Studio
           </h1>
-          <div className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">Auto-rendering</div>
+          <div className="flex items-center gap-2">
+            <div className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">Auto-rendering</div>
+            <button
+              type="button"
+              onClick={() => setActiveMobilePane('preview')}
+              className="rounded-lg bg-blue-600 px-3 py-1.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-blue-700 md:hidden"
+            >
+              Preview
+            </button>
+          </div>
         </div>
         <div className="flex-1 relative bg-white">
           <Editor
@@ -274,13 +288,17 @@ export default function App() {
 
       {/* Right Panel: Preview */}
       <div 
-        className={`flex flex-col transition-all duration-300 ease-in-out ${
-          isFullscreen ? 'w-full' : 'w-1/2'
+        className={`flex-col transition-all duration-300 ease-in-out ${
+          isFullscreen
+            ? 'flex h-full w-full'
+            : activeMobilePane === 'preview'
+              ? 'flex h-full w-full md:w-1/2'
+              : 'hidden md:flex md:w-1/2'
         }`}
       >
         {/* Toolbar */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 bg-white shadow-sm z-10 shrink-0">
-          <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center justify-between gap-3 px-3 py-3 border-b border-gray-200 bg-white shadow-sm z-10 shrink-0 sm:px-4">
+          <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2 sm:gap-3">
             <div className="flex items-center gap-2 bg-gray-100 rounded-lg p-1 border border-gray-200 hover:border-gray-300 transition-colors">
               <Palette className="w-4 h-4 text-gray-500 ml-2" />
               <select 
@@ -313,7 +331,17 @@ export default function App() {
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <button
+              type="button"
+              onClick={() => setActiveMobilePane('editor')}
+              className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-200 hover:bg-gray-50 rounded-lg transition-colors shadow-sm md:hidden"
+              title="Back to Editor"
+            >
+              <FileCode2 className="w-4 h-4" />
+              <span>Editor</span>
+            </button>
+
             <button 
               onClick={() => exportImage('png', true)}
               className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-200 hover:bg-gray-50 rounded-lg transition-colors shadow-sm"
@@ -368,6 +396,7 @@ export default function App() {
             </div>
           ) : (
             <TransformWrapper
+              key={`${svgContent}-${activeMobilePane}`}
               initialScale={1}
               minScale={0.1}
               maxScale={8}
@@ -376,7 +405,7 @@ export default function App() {
             >
               {({ zoomIn, zoomOut, resetTransform }) => (
                 <>
-                  <div className="absolute bottom-6 right-6 z-20 flex flex-col gap-2 bg-white/90 backdrop-blur-sm rounded-xl shadow-lg border border-gray-200/50 p-1.5">
+                  <div className="absolute bottom-4 right-4 z-20 flex flex-col gap-2 bg-white/90 backdrop-blur-sm rounded-xl shadow-lg border border-gray-200/50 p-1.5 sm:bottom-6 sm:right-6">
                     <button onClick={() => zoomIn()} className="p-2 hover:bg-gray-100 rounded-lg text-gray-700 transition-colors" title="Zoom In">
                       <ZoomIn className="w-4 h-4" />
                     </button>
@@ -390,7 +419,7 @@ export default function App() {
                   <TransformComponent wrapperClass="!w-full !h-full" contentClass="!w-full !h-full flex items-center justify-center">
                     <div 
                       ref={previewRef}
-                      className="mermaid-svg-container cursor-grab active:cursor-grabbing p-8 min-w-min min-h-min flex items-center justify-center transition-opacity duration-300"
+                      className="mermaid-svg-container cursor-grab active:cursor-grabbing p-4 sm:p-8 min-w-min min-h-min flex items-center justify-center transition-opacity duration-300"
                       dangerouslySetInnerHTML={{ __html: svgContent }}
                       onClick={() => {
                         if (!isFullscreen) setIsFullscreen(true);
