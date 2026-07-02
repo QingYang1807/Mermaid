@@ -1,8 +1,27 @@
 @import "tailwindcss";
 
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    margin: 0;
+    overscroll-behavior: none;
+  }
+}
+
 @layer utilities {
   .mermaid-svg-container svg {
-    max-width: none !important;
+    max-width: 100% !important;
     height: auto !important;
+  }
+
+  @media (min-width: 768px) {
+    .mermaid-svg-container svg {
+      max-width: none !important;
+    }
   }
 }
